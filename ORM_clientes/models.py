@@ -1,3 +1,8 @@
+from sqlalchemy import Column, String, Integer, ForeignKey
+from sqlalchemy.orm import relationship
+from database import Base
+
+
 class Cliente:
     def __init__(self, id_cliente, nombre, correo):
         self.id_cliente = id_cliente
