@@ -2,9 +2,9 @@ from sqlalchemy import Column, Integer,create_engine, String, ForeignKey,DateTim
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 #URL Base de datos XAMPP
-DATABASE_URL = "mysql+mysqlconnector://root:@localhost/Restaurante"
+DATABASE_URL = "sqlite:///Restaurante.db"
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, connect_args={"ckeck_same":False})
 Base = declarative_base()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
