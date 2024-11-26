@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 # Crear una sesión
 def get_session():
     try:
-        db = "mysql+mysqlconnector://root:@localhost/Restaurante"()
+        db = SessionLocal()
         yield db
     finally:
         db.close()
