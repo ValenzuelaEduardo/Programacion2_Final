@@ -11,8 +11,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 class Cliente(Base):
     __tablename__ = "clientes"
     id_cliente = Column(Integer, primary_key=True)
-    nombre = Column(String)
-    correo = Column(String)
+    nombre = Column(String, nullable=True)
+    correo = Column(String, unique=True ,nullable=True)
 
 class Ingrediente(Base):
     __tablename__ = 'ingredientes'
