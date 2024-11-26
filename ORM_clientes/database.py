@@ -1,56 +1,72 @@
-from sqlalchemy import Column, Integer,create_engine, String, ForeignKey,DateTime, Float
-from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-#URL Base de datos XAMPP
-DATABASE_URL = "sqlite:///Restaurante.db"
+import sqlite3
+from app import *
 
-engine = create_engine(DATABASE_URL, connect_args={"ckeck_same":False})
-Base = declarative_base()
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+class BaseDatos:
+    def __init__(self, db_path: str = 'restaurante.db'):
+        """
+        Initialize the database and create all tables if they don't exist.
+        
+        Args:
+            db_path (str): Path to the SQLite database file
+        """
+        self.db_path = db_path
+        self._create_tables()
 
-class Cliente(Base):
-    __tablename__ = "clientes"
-    id_cliente = Column(Integer, primary_key=True)
-    nombre = Column(String, nullable=True)
-    correo = Column(String, unique=True ,nullable=True)
+    def _create_tables(self):
+        """
+        Create all necessary tables if they don't exist.
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
 
-class Ingrediente(Base):
-    __tablename__ = 'ingredientes'
-    id_ingrediente = Column(Integer, primary_key=True)
-    nombre = Column(String, unique=True, nullable=False)
-    tipo = Column(String, nullable=False)
-    cantidad = Column(Float, nullable=False)
-    unidad_medida = Column(String, nullable=False)
+            
+            # Crear tabla de menús
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS menus (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT NOT NULL,
+                    descripcion TEXT,
+                    precio REAL NOT NULL,
+                    disponible INTEGER NOT NULL DEFAULT 1
+                )
+            ''')
 
-class Menu(Base):
-    __tablename__ = 'menus'
-    id_menu = Column(Integer, primary_key=True)
-    nombre = Column(String, unique=True, nullable=False)
-    descripcion = Column(String)
+            # Crear tabla pedidos
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS pedidos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cliente_id INTEGER NOT NULL,
+                    menu_id INTEGER NOT NULL,
+                    total REAL NOT NULL,
+                    fecha TEXT NOT NULL,
+                    FOREIGN KEY (cliente_id) REFERENCES clientes (id),
+                    FOREIGN KEY (menu_id) REFERENCES menus (id)
+                )
+            ''')
 
-class Pedido(Base):
-    __tablename__ = 'pedidos'
-    id_pedido = Column(Integer, primary_key=True)
-    id_cliente = Column(Integer, ForeignKey('clientes.id_cliente'), nullable=False)
-    fecha_creacion = Column(DateTime, null=False)
-    total = Column(Float, nullable=False)
-    cliente = relationship('Cliente', back_populates='pedidos')
-    detalles = relationship('DetallePedido', back_populates='pedido')
+            # Crear tabla ingredientes
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS ingredientes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT NOT NULL UNIQUE,
+                    tipo TEXT NOT NULL,
+                    cantidad REAL NOT NULL,
+                    unidad_medida TEXT NOT NULL
+                )
+            ''')
 
-class DetallePedido(Base):
-    __tablename__ = 'detalle_pedido'
-    id_detalle = Column(Integer, primary_key=True)
-    id_pedido = Column(Integer, ForeignKey('pedidos.id_pedido'), null=False)
-    id_menu = Column(Integer, ForeignKey('menus.id_menu'), null=False)
-    cantidad = Column(Integer, null=False)
-    pedido = relationship('Pedido', back_populates='detalles')
+            # Crear tabla clientes
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS clientes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT NOT NULL,
+                    correo_electronico TEXT UNIQUE NOT NULL
+                )
+            ''')
 
-class IngredientesPorMenu(Base):
-    __tablename__ = 'ingredientes_por_menu'
-    id_menu = Column(Integer, ForeignKey('menus.id_menu'), primary_key=True)
-    id_ingrediente = Column(Integer, ForeignKey('ingredientes.id_ingrediente'), primary_key=True)
-    cantidad = Column(Float, nullable=False)
-    unidad_medida = Column(String, null=False)
+            conn.commit()
 
-def init_db():
-    Base.metadata.create_all(bind=engine)
+if __name__ == "__main__":
+    bd = BaseDatos('restaurante.db')
+    app=App()
+    app.mainloop()

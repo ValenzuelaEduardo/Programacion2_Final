@@ -1,46 +1,85 @@
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session
+from models import Ingrediente
+from typing import List, Dict, Optional
 
-# Crear una sesión
-def get_session():
-    try:
-        db = SessionLocal()
-        yield db
-    finally:
-        db.close()
 
-#---------Create-------------------
-def crear_ingrediente(nombre, tipo, cantidad, unidad_medida, session):
-    try:
-        nuevo_ingrediente = Ingrediente(nombre=nombre, tipo=tipo, cantidad=cantidad, unidad_medida=unidad_medida)
-        session.add(nuevo_ingrediente)
-        session.commit()
-        print(f"Ingrediente '{nombre}' creado con éxito.")
-    except IntegrityError:
-        session.rollback()
-        print("Error: Ya existe un ingrediente con este nombre.")
+class IngredienteCRUD:
+    @staticmethod
+    def crear_ingrediente(
+        session: Session, nombre: str, tipo: str, cantidad: float, unidad_medida: str
+    ) -> Ingrediente:
+        """
+        Crea un nuevo ingrediente en la base de datos.
+        """
+        try:
+            nuevo_ingrediente = Ingrediente(
+                nombre=nombre, tipo=tipo, cantidad=cantidad, unidad_medida=unidad_medida
+            )
+            session.add(nuevo_ingrediente)
+            session.commit()
+            session.refresh(nuevo_ingrediente)
+            return nuevo_ingrediente
+        except IntegrityError:
+            session.rollback()
+            raise ValueError(f"Error: Ya existe un ingrediente con el nombre '{nombre}'.")
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise ValueError(f"Error al guardar el ingrediente: {str(e)}")
 
-#---------Read-------------------
-def leer_ingredientes(session):
-    ingredientes = session.query(Ingrediente).all()
-    for ingrediente in ingredientes:
-        print(f"ID: {ingrediente.id_ingrediente}, Nombre: {ingrediente.nombre}, Tipo: {ingrediente.tipo}, Cantidad: {ingrediente.cantidad} {ingrediente.unidad_medida}")
+    @staticmethod
+    def leer_ingredientes(session: Session, limite: int = 10, offset: int = 0) -> List[Dict[str, Optional[str]]]:
+        """
+        Lee una lista de ingredientes desde la base de datos.
+        """
+        ingredientes = session.query(Ingrediente).offset(offset).limit(limite).all()
+        return [
+            {
+                "id_ingrediente": ingrediente.id_ingrediente,
+                "nombre": ingrediente.nombre,
+                "tipo": ingrediente.tipo,
+                "cantidad": ingrediente.cantidad,
+                "unidad_medida": ingrediente.unidad_medida,
+            }
+            for ingrediente in ingredientes
+        ]
 
-#---------Update-------------------
-def actualizar_ingrediente(id_ingrediente, nueva_cantidad, session):
-    ingrediente = session.query(Ingrediente).filter_by(id_ingrediente=id_ingrediente).first()
-    if ingrediente:
-        ingrediente.cantidad = nueva_cantidad
-        session.commit()
-        print(f"Ingrediente ID {id_ingrediente} actualizado.")
-    else:
-        print("Ingrediente no encontrado.")
+    @staticmethod
+    def actualizar_ingrediente(
+        session: Session, id_ingrediente: int, nueva_cantidad: Optional[float] = None
+    ) -> Ingrediente:
+        """
+        Actualiza la cantidad de un ingrediente existente.
+        """
+        ingrediente = session.query(Ingrediente).filter_by(id_ingrediente=id_ingrediente).first()
+        if not ingrediente:
+            raise ValueError(f"Ingrediente con ID {id_ingrediente} no encontrado.")
+        if nueva_cantidad is not None:
+            if nueva_cantidad < 0:
+                raise ValueError("La cantidad no puede ser negativa.")
+            ingrediente.cantidad = nueva_cantidad
 
-#---------Delete-------------------
-def eliminar_ingrediente(id_ingrediente, session):
-    ingrediente = session.query(Ingrediente).filter_by(id_ingrediente=id_ingrediente).first()
-    if ingrediente:
-        session.delete(ingrediente)
-        session.commit()
-        print(f"Ingrediente ID {id_ingrediente} eliminado.")
-    else:
-        print("Ingrediente no encontrado.")
+        try:
+            session.commit()
+            session.refresh(ingrediente)
+            return ingrediente
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise ValueError(f"Error al actualizar el ingrediente: {str(e)}")
+
+    @staticmethod
+    def eliminar_ingrediente(session: Session, id_ingrediente: int) -> Ingrediente:
+        """
+        Elimina un ingrediente de la base de datos.
+        """
+        ingrediente = session.query(Ingrediente).filter_by(id_ingrediente=id_ingrediente).first()
+        if not ingrediente:
+            raise ValueError(f"Ingrediente con ID {id_ingrediente} no encontrado.")
+        
+        try:
+            session.delete(ingrediente)
+            session.commit()
+            return ingrediente
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise ValueError(f"Error al eliminar el ingrediente: {str(e)}")
