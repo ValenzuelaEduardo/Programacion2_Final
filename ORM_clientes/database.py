@@ -9,7 +9,7 @@ Base = declarative_base()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 class Cliente(Base):
-    __tablename__ = "Clientes"
+    __tablename__ = "clientes"
     id_cliente = Column(Integer, primary_key=True)
     nombre = Column(String)
     correo = Column(String)
