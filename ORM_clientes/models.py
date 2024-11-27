@@ -24,7 +24,7 @@ pedido_menu = Table(
 class Cliente(Base):
     __tablename__ = 'clientes'
 
-    id_cliente = Column(Integer, primary_key=True, autoincrement=True)
+    id_Cliente = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String, nullable=False)
     correo = Column(String, unique=True, nullable=False)
 

@@ -7,8 +7,8 @@ from CRUD.pedido_crud import PedidoCRUD
 
 def registrar_clientes(db):
     print("Registrando clientes...")
-    ClienteCRUD.crear_cliente(db, "Juan Pérez", "juan@example.com", 30)
-    ClienteCRUD.crear_cliente(db, "María Gómez", "maria@example.com", 25)
+    ClienteCRUD.crear_Cliente(db, "Juan Pérez", "juan@example.com", 30)
+    ClienteCRUD.crear_Cliente(db, "María Gómez", "maria@example.com", 25)
     print("Clientes registrados.")
 
 def gestionar_ingredientes(db):
@@ -39,7 +39,7 @@ def generar_pedidos(db):
     menu = MenuCRUD.leer_menus(db)[0]
     
     if cliente and menu:
-        PedidoCRUD.crear_pedido(db, cliente.correo, "Pedido 1", [menu.id_menu])
+        PedidoCRUD.crear_pedido(db, Cliente.correo, "Pedido 1", [menu.id_menu])
     print("Pedidos generados.")
 
 def mostrar_estadisticas(db):
