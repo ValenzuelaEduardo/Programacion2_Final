@@ -1,51 +1,44 @@
+
 from sqlalchemy.orm import Session
 from models import Cliente
 
 class ClienteCRUD:
     @staticmethod
-    def crear_cliente(db: Session, nombre: str, correo: str):
+    def crear_Cliente(db: Session, nombre: str, correo: str):
+        if not nombre or not correo:
+            raise ValueError("El nombre y el correo no pueden estar vacíos.")
         cliente_existente = db.query(Cliente).filter(Cliente.correo == correo).first()
         if cliente_existente:
             raise ValueError(f"El cliente con correo '{correo}' ya existe.")
-        
-        nuevo_cliente = Cliente(nombre=nombre, correo=correo)
-        db.add(nuevo_cliente)
-        db.commit()
-        db.refresh(nuevo_cliente)
-        return nuevo_cliente
 
     @staticmethod
-    def leer_clientes(db: Session):
-        clientes = db.query(Cliente).all()
-        return [
-            {
-                "id_cliente": cliente.id_cliente,
-                "nombre": cliente.nombre,
-                "correo": cliente.correo
-            }
-            for cliente in clientes
-        ]
+    def leer_Clientes(db: Session):
+        return db.query(Cliente).all()
 
     @staticmethod
-    def actualizar_cliente(db: Session, id_cliente: int, nombre: str = None, correo: str = None):
-        cliente = db.query(Cliente).filter(Cliente.id_cliente == id_cliente).first()
-        if not cliente:
+    def actualizar_Cliente(db: Session, id_cliente: int, nombre: str = None, tipo: str = None, cantidad: float = None, unidad: str = None):
+        Cliente = db.query(Cliente).filter(Cliente.id_cliente == id_cliente).first()
+        if not Cliente:
             raise ValueError(f"Cliente con ID {id_cliente} no encontrado.")
-        if correo and db.query(Cliente).filter(Cliente.correo == correo, Cliente.id_cliente != id_cliente).first():
-            raise ValueError(f"El correo '{correo}' ya está en uso por otro cliente.")
         if nombre:
-            cliente.nombre = nombre
-        if correo:
-            cliente.correo = correo
+            Cliente.nombre = nombre
+        if tipo:
+            Cliente.tipo = tipo
+        if cantidad is not None:
+            Cliente.cantidad = cantidad
+        if unidad:
+            Cliente.unidad = unidad
+        
         db.commit()
-        db.refresh(cliente)
-        return cliente
+        db.refresh(Cliente)
+        return Cliente
 
     @staticmethod
-    def borrar_cliente(db: Session, id_cliente: int):
-        cliente = db.query(Cliente).filter(Cliente.id_cliente == id_cliente).first()
-        if not cliente:
-            raise ValueError(f"Cliente con ID {id_cliente} no encontrado.") 
-        db.delete(cliente)
+    def borrar_Cliente(db: Session, id_cliente: int):
+        Cliente = db.query(Cliente).filter(Cliente.id_cliente == id_cliente).first()
+        if not Cliente:
+            raise ValueError(f"Cliente con ID {id_cliente} no encontrado.")
+        
+        db.delete(Cliente)
         db.commit()
-        return cliente
+        return Cliente
