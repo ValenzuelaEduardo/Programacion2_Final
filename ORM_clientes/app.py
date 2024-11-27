@@ -1,232 +1,185 @@
-from database import inicializar_base_de_datos, get_session
-from models import Cliente, Pedido, Ingrediente, Menu
-from CRUD.ingrediente_crud import IngredienteCRUD
-from CRUD.menu_crud import MenuCRUD
-from CRUD.cliente_crud import ClienteCRUD
-from CRUD.pedido_crud import PedidoCRUD
 import customtkinter as ctk
-<<<<<<< HEAD
 from tkinter import ttk
 from database import *
-=======
->>>>>>> Renè
 
-class App:
-    def __init__(self, master):
-        self.master = master
-        master.title("Sistema de Gestión de Restaurante")
+ctk.set_appearance_mode("dark")  
+ctk.set_default_color_theme("green")  
 
-        self.tab_control = ctk.CTkTabview(master)
-        self.tab_control.pack(pady=10, padx=10, fill="both", expand=True)
+class App(ctk.CTk):
+    def __init__(self):
+        super().__init__()
 
-        # Pestaña para gestionar clientes
-        self.tab_clientes = self.tab_control.add("Clientes")
-        self.frame_clientes = ctk.CTkFrame(self.tab_clientes)
-        self.frame_clientes.pack(pady=10, padx=10, fill="both", expand=True)
+        self.title("Gestión de Clientes y Pedidos")
+        self.geometry("750x600")
 
-        self.label_nombre = ctk.CTkLabel(self.frame_clientes, text="Nombre del Cliente")
-        self.label_nombre.pack(pady=5)
-        self.entry_nombre = ctk.CTkEntry(self.frame_clientes)
-        self.entry_nombre.pack(pady=5)
+        # Crear el Tabview (pestañas)
+        self.tabview = ctk.CTkTabview(self)
+        self.tabview.pack(pady=20, padx=20, fill="both", expand=True)
 
-        self.label_correo = ctk.CTkLabel(self.frame_clientes, text="Correo del Cliente")
-        self.label_correo.pack(pady=5)
-        self.entry_correo = ctk.CTkEntry(self.frame_clientes)
-        self.entry_correo.pack(pady=5)
+        self.tab_ingredientes = self.tabview.add("Ingredientes")
+        self.pestaña_de_ingredientes(self.tab_ingredientes)
 
-        self.button_crear_cliente = ctk.CTkButton(self.frame_clientes, text="Crear Cliente", command=self.crear_cliente)
-        self.button_crear_cliente.pack(pady=5)
+        self.tab_menus = self.tabview.add("Menus")
+        self.pestaña_de_menu(self.tab_menus)
 
-        self.button_mostrar_clientes = ctk.CTkButton(self.frame_clientes, text="Mostrar Clientes", command=self.mostrar_clientes)
-        self.button_mostrar_clientes.pack(pady=5)
+        self.tab_clientes = self.tabview.add("Clientes")
+        self.pestaña_de_clientes(self.tab_clientes)
 
-        self.text_clientes = ctk.CTkTextbox(self.frame_clientes, width=400, height=200)
-        self.text_clientes.pack(pady=5)
+        self.tab_panel_de_compra = self.tabview.add("Panel de Compra")
+        self.pestaña_de_panel_de_compra(self.tab_panel_de_compra)
 
-        # Pestaña para gestionar ingredientes
-        self.tab_ingredientes = self.tab_control.add("Ingredientes")
-        self.frame_ingredientes = ctk.CTkFrame(self.tab_ingredientes)
-        self.frame_ingredientes.pack(pady=10, padx=10, fill="both", expand=True)
+        self.tab_pedidos = self.tabview.add("Pedidos")
+        self.pestaña_de_pedidos(self.tab_pedidos)
 
-        self.label_nombre_ingrediente = ctk.CTkLabel(self.frame_ingredientes, text="Nombre del Ingrediente")
-        self.label_nombre_ingrediente.pack(pady=5)
-        self.entry_nombre_ingrediente = ctk.CTkEntry(self.frame_ingredientes)
-        self.entry_nombre_ingrediente.pack(pady=5)
+    def pestaña_de_ingredientes(self, pos):
+        # Gestión de Ingredientes
+        self.frame_superior = ctk.CTkFrame(pos)
+        self.frame_superior.pack(pady=0,padx=0)
 
-        self.label_tipo_ingrediente = ctk.CTkLabel(self.frame_ingredientes, text="Tipo del Ingrediente")
-        self.label_tipo_ingrediente.pack(pady=5)
-        self.entry_tipo_ingrediente = ctk.CTkEntry(self.frame_ingredientes)
-        self.entry_tipo_ingrediente.pack(pady=5)
+        ctk.CTkLabel(self.frame_superior, text="Nombre Ingrediente").grid(row=0,column=0, pady=0,padx=10)
+        ctk.CTkLabel(self.frame_superior, text="Cantidad").grid(row=0,column=1, pady=0,padx=10)
+        ctk.CTkLabel(self.frame_superior, text="Tipo").grid(row=0,column=2, pady=0,padx=10)
 
-        self.label_cantidad_ingrediente = ctk.CTkLabel(self.frame_ingredientes, text="Cantidad del Ingrediente")
-        self.label_cantidad_ingrediente.pack(pady=5)
-        self.entry_cantidad_ingrediente = ctk.CTkEntry(self.frame_ingredientes)
-        self.entry_cantidad_ingrediente.pack(pady=5)
+        self.entry_nombre = ctk.CTkEntry(self.frame_superior)
+        self.entry_nombre.grid(row=1,column=0, pady=10,padx=10)
 
-        self.label_unidad_ingrediente = ctk.CTkLabel(self.frame_ingredientes, text="Unidad del Ingrediente")
-        self.label_unidad_ingrediente.pack(pady=5)
-        self.entry_unidad_ingrediente = ctk.CTkEntry(self.frame_ingredientes)
-        self.entry_unidad_ingrediente.pack(pady=5)
+        self.entry_cantidad = ctk.CTkEntry(self.frame_superior)
+        self.entry_cantidad.grid(row=1,column=1, pady=10,padx=10)
 
-        self.button_crear_ingrediente = ctk.CTkButton(self.frame_ingredientes, text="Crear Ingrediente", command=self.crear_ingrediente)
-        self.button_crear_ingrediente.pack(pady=5)
+        self.entry_tipo = ctk.CTkEntry(self.frame_superior)
+        self.entry_tipo.grid(row=1,column=2, pady=10,padx=10)
 
-        self.button_mostrar_ingredientes = ctk.CTkButton(self.frame_ingredientes, text="Mostrar Ingredientes", command=self.mostrar_ingredientes)
-        self.button_mostrar_ingredientes.pack(pady=5)
+        self.btn_crear_ingrediente = ctk.CTkButton(self.frame_superior, text="Crear Ingrediente")
+        self.btn_crear_ingrediente.grid(row=1,column=3)
 
-        self.text_ingredientes = ctk.CTkTextbox(self.frame_ingredientes, width=400, height=200)
-        self.text_ingredientes.pack(pady=5)
+        self.btn_añadir_ing_existente = ctk.CTkButton(self.frame_superior, text="Añadir Ing. Existente")
+        self.btn_añadir_ing_existente.grid(row=2,column=1, pady=20,padx=10)
 
-        # Pestaña para gestionar menús
-        self.tab_menus = self.tab_control.add("Menús")
-        self.frame_menus = ctk.CTkFrame(self.tab_menus)
-        self.frame_menus.pack(pady=10, padx=10, fill="both", expand=True)
+        self.btn_listar_ingredientes = ctk.CTkButton(self.frame_superior, text="Listar Ingrediente")
+        self.btn_listar_ingredientes.grid(row=2,column=2, pady=20,padx=10)
 
-        self.label_nombre_menu = ctk.CTkLabel(self.frame_menus, text="Nombre del Menú")
-        self.label_nombre_menu.pack(pady=5)
-        self.entry_nombre_menu = ctk.CTkEntry(self.frame_menus)
-        self.entry_nombre_menu.pack(pady=5)
+        # Visualizacion de Ingredientes
+        self.frame_inferior = ctk.CTkFrame(pos)
+        self.frame_inferior.pack(pady=0,padx=0)
 
-        self.label_descripcion_menu = ctk.CTkLabel(self.frame_menus, text="Descripción del Menú")
-        self.label_descripcion_menu.pack(pady=5)
-        self.entry_descripcion_menu = ctk.CTkEntry(self.frame_menus)
-        self.entry_descripcion_menu.pack(pady=5)
+        self.treeview_ingredientes = ttk.Treeview(self.frame_inferior, columns=("Nombre", "Cantidad", "Tipo"), show="headings")
+        self.treeview_ingredientes.heading("Nombre", text="Nombre")
+        self.treeview_ingredientes.heading("Cantidad", text="Cantidad")
+        self.treeview_ingredientes.heading("Tipo", text="Tipo")
+        self.treeview_ingredientes.pack(pady=10, padx=10, fill="both", expand=True)
 
-        self.button_crear_menu = ctk.CTkButton(self.frame_menus, text="Crear Menú", command=self.crear_menu)
-        self.button_crear_menu.pack(pady=5)
+    def pestaña_de_menu(self, pos):
+        # Gestión de Meenu
+        self.frame_superior = ctk.CTkFrame(pos)
+        self.frame_superior.pack(pady=0,padx=0)
 
-        self.button_mostrar_menus = ctk.CTkButton(self.frame_menus, text="Mostrar Menús", command=self.mostrar_menus)
-        self.button_mostrar_menus.pack(pady=5)
+        self.btn_crear_menu = ctk.CTkButton(self.frame_superior, text="Crear Nuevo Menu")
+        self.btn_crear_menu.grid(row=0,column=0,pady=10,padx=10)
 
-        self.text_menus = ctk.CTkTextbox(self.frame_menus, width=400, height=200)
-        self.text_menus.pack(pady=5)
+        self.btn_ver_menus = ctk.CTkButton(self.frame_superior, text="Listar Menu")
+        self.btn_ver_menus.grid(row=0,column=1,pady=10,padx=10)
 
-        # Pestaña para gestionar pedidos
-        self.tab_pedidos = self.tab_control.add("Pedidos")
-        self.frame_pedidos = ctk.CTkFrame(self.tab_pedidos)
-        self.frame_pedidos.pack(pady=10, padx=10, fill="both", expand=True)
+        # Visualizacion de Meny
+        self.frame_inferior = ctk.CTkFrame(pos)
+        self.frame_inferior.pack(pady=0,padx=0)
 
-        self.label_cliente_pedido = ctk.CTkLabel(self.frame_pedidos, text="Correo del Cliente para el Pedido")
-        self.label_cliente_pedido.pack(pady=5)
-        self.entry_cliente_pedido = ctk.CTkEntry(self.frame_pedidos)
-        self.entry_cliente_pedido.pack(pady=5)
+        self.treeview_ingredientes = ttk.Treeview(self.frame_inferior, columns=("Nombre", "Descripción", "Ingredientes"), show="headings")
+        self.treeview_ingredientes.heading("Nombre", text="Nombre")
+        self.treeview_ingredientes.heading("Descripción", text="Descripción")
+        self.treeview_ingredientes.heading("Ingredientes", text="Ingredientes")
+        self.treeview_ingredientes.pack(pady=10, padx=10, fill="both", expand=True)
 
-        self.label_descripcion_pedido = ctk.CTkLabel(self.frame_pedidos, text="Descripción del Pedido")
-        self.label_descripcion_pedido.pack(pady=5)
-        self.entry_descripcion_pedido = ctk.CTkEntry(self.frame_pedidos)
-        self.entry_descripcion_pedido.pack(pady=5)
+    def pestaña_de_clientes(self, pos):
+        # Gestion de Clientes
+        self.frame_superior = ctk.CTkFrame(pos)
+        self.frame_superior.pack(pady=0,padx=0)
 
-        self.button_crear_pedido = ctk.CTkButton(self.frame_pedidos, text="Crear Pedido", command=self.crear_pedido)
-        self.button_crear_pedido.pack(pady=5)
+        ctk.CTkLabel(self.frame_superior, text="Nombre").grid(row=0, column=0, pady=10, padx=10)
+        self.entry_nombre = ctk.CTkEntry(self.frame_superior)
+        self.entry_nombre.grid(row=0, column=1, pady=10, padx=10)
 
-        self.button_mostrar_pedidos = ctk.CTkButton(self.frame_pedidos, text="Mostrar Pedidos", command=self.mostrar_pedidos)
-        self.button_mostrar_pedidos.pack(pady=5)
+        ctk.CTkLabel(self.frame_superior, text="Email").grid(row=0, column=2, pady=10, padx=10)
+        self.entry_email = ctk.CTkEntry(self.frame_superior)
+        self.entry_email.grid(row=0, column=3, pady=10, padx=10)
 
-        self.text_pedidos = ctk.CTkTextbox(self.frame_pedidos, width=400, height=200)
-        self.text_pedidos.pack(pady=5)
+        self.btn_crear_cliente = ctk.CTkButton(self.frame_superior, text="Crear Cliente")
+        self.btn_crear_cliente.grid(row=1, column=0, pady=10, padx=10)
 
-    def crear_cliente(self):
-        nombre = self.entry_nombre.get()
-        correo = self.entry_correo.get()
-        if nombre and correo:
-            with next(get_session()) as db:
-                try:
-                    ClienteCRUD.crear_Cliente(db, nombre, correo)
-                    self.text_clientes.insert("end", f"Cliente '{nombre}' creado con éxito.\n")
-                except ValueError as e:
-                    self.text_clientes.insert("end", f"Error: {str(e)}\n")
-        else:
-            self.text_clientes.insert("end", "Por favor, ingrese un nombre y un correo válidos.\n")
+        self.btn_actualizar_cliente = ctk.CTkButton(self.frame_superior, text="Actualizar Cliente")
+        self.btn_actualizar_cliente.grid(row=1, column=1, pady=10, padx=10)
 
-    def mostrar_clientes(self):
-        with next(get_session()) as db:
-            clientes = ClienteCRUD.leer_Clientes(db)
-            self.text_clientes.delete("1.0", "end")
-            if clientes:
-                for cliente in clientes:
-                    self.text_clientes.insert("end", f"- {cliente.nombre} ({cliente.correo})\n")
-            else:
-                self.text_clientes.insert("end", "No hay clientes registrados.\n")
+        self.btn_eliminar_cliente = ctk.CTkButton(self.frame_superior, text="Eliminar Cliente")
+        self.btn_eliminar_cliente.grid(row=1, column=2, pady=10, padx=10)
 
-    def crear_ingrediente(self):
-        nombre = self.entry_nombre_ingrediente.get()
-        tipo = self.entry_tipo_ingrediente.get()
-        cantidad = self.entry_cantidad_ingrediente.get()
-        unidad = self.entry_unidad_ingrediente.get()
-        if nombre and tipo and cantidad and unidad:
-            with next(get_session()) as db:
-                try:
-                    IngredienteCRUD.crear_ingrediente(db, nombre, tipo, float(cantidad), unidad)
-                    self.text_ingredientes.insert("end", f"Ingrediente '{nombre}' creado con éxito.\n")
-                except ValueError as e:
-                    self.text_ingredientes.insert("end", f"Error: {str(e)}\n")
-        else:
-            self.text_ingredientes.insert("end", "Por favor, ingrese todos los campos del ingrediente correctamente.\n")
+        # Visualización de Clientes
+        self.frame_inferior = ctk.CTkFrame(pos)
+        self.frame_inferior.pack(pady=0,padx=0)
 
-    def mostrar_ingredientes(self):
-        with next(get_session()) as db:
-            ingredientes = IngredienteCRUD.leer_ingredientes(db)
-            self.text_ingredientes.delete("1.0", "end")
-            if ingredientes:
-                for ingrediente in ingredientes:
-                    self.text_ingredientes.insert("end", f"- {ingrediente.nombre} ({ingrediente.tipo}, {ingrediente.cantidad} {ingrediente.unidad})\n")
-            else:
-                self.text_ingredientes.insert("end", "No hay ingredientes registrados.\n")
+        self.treeview_clientes = ttk.Treeview(self.frame_inferior, columns=("Nombre", "Email"), show="headings")
+        self.treeview_clientes.heading("Nombre", text="Nombre")
+        self.treeview_clientes.heading("Email", text="Email")
+        self.treeview_clientes.pack(pady=10, padx=10, fill="both", expand=True)
 
-    def crear_menu(self):
-        nombre = self.entry_nombre_menu.get()
-        descripcion = self.entry_descripcion_menu.get()
-        if nombre and descripcion:
-            with next(get_session()) as db:
-                try:
-                    MenuCRUD.crear_menu(db, nombre, descripcion, [])  # Se debe seleccionar ingredientes en la interfaz
-                    self.text_menus.insert("end", f"Menú '{nombre}' creado con éxito.\n")
-                except ValueError as e:
-                    self.text_menus.insert("end", f"Error: {str(e)}\n")
-        else:
-            self.text_menus.insert("end", "Por favor, ingrese el nombre y la descripción del menú.\n")
+    def pestaña_de_panel_de_compra(self, pos):
+        # Gestionar venta
+        self.frame_superior = ctk.CTkFrame(pos)
+        self.frame_superior.pack(pady=0,padx=0)
 
-    def mostrar_menus(self):
-        with next(get_session()) as db:
-            menus = MenuCRUD.leer_menus(db)
-            self.text_menus.delete("1.0", "end")
-            if menus:
-                for menu in menus:
-                    self.text_menus.insert("end", f"- {menu.nombre}: {menu.descripcion}\n")
-            else:
-                self.text_menus.insert("end", "No hay menús registrados.\n")
+        ctk.CTkLabel(self.frame_superior, text="Cliente").grid(row=0,column=0, pady=10,padx=10)
+        self.combo_cliente = ctk.CTkComboBox(self.frame_superior)
+        self.combo_cliente.grid(row=0,column=1, pady=10,padx=10)
 
-    def crear_pedido(self):
-        cliente_correo = self.entry_cliente_pedido.get()
-        descripcion = self.entry_descripcion_pedido.get()
-        if cliente_correo and descripcion:
-            with next(get_session()) as db:
-                try:
-                    PedidoCRUD.crear_pedido(db, cliente_correo, descripcion, [])  # Se debe seleccionar menús en la interfaz
-                    self.text_pedidos.insert("end", f"Pedido para '{cliente_correo}' creado con éxito.\n")
-                except ValueError as e:
-                    self.text_pedidos.insert("end", f"Error: {str(e)}\n")
-        else:
-            self.text_pedidos.insert("end", "Por favor, ingrese el correo del cliente y la descripción del pedido.\n")
+        ctk.CTkLabel(self.frame_superior, text="Menu").grid(row=1,column=0, pady=10,padx=10)
+        self.combo_cliente = ctk.CTkComboBox(self.frame_superior)
+        self.combo_cliente.grid(row=1,column=1, pady=10,padx=10)
+        
+        self.btn_agregar_menu = ctk.CTkButton(self.frame_superior, text="Agregar Menu")
+        self.btn_agregar_menu.grid(row=2,column=1)
 
-    def mostrar_pedidos(self):
-        with next(get_session()) as db:
-            pedidos = PedidoCRUD.leer_pedidos(db)
-            self.text_pedidos.delete("1.0", "end")
-            if pedidos:
-                for pedido in pedidos:
-                    self.text_pedidos.insert("end", f"- {pedido['descripcion']} para {pedido['cliente']}\n")
-            else:
-                self.text_pedidos.insert("end", "No hay pedidos registrados.\n")
+        # Visualizar Venta
+        self.frame_inferior = ctk.CTkFrame(pos)
+        self.frame_inferior.pack(pady=0,padx=0)
+
+        self.treeview_venta = ttk.Treeview(self.frame_inferior, columns=("Cliente", "Menus", "Total"), show="headings")
+        self.treeview_venta.heading("Cliente", text="Cliente")
+        self.treeview_venta.heading("Menus", text="Menus")
+        self.treeview_venta.heading("Total", text="Total")
+        self.treeview_venta.pack(pady=10, padx=10, fill="both", expand=True)
+
+        self.btn_realizar_compra = ctk.CTkButton(self.frame_inferior, text="Realizar Compra / Generar Boleta")
+        self.btn_realizar_compra.pack(pady=10,padx=10)
+
+    def pestaña_de_pedidos(self, pos):
+        self.frame_superior = ctk.CTkFrame(pos)
+        self.frame_superior.pack(pady=0,padx=0)
+
+        ctk.CTkLabel(self.frame_superior, text="Cliente").grid(row=0,column=0, pady=10,padx=10)
+        self.combo_cliente = ctk.CTkComboBox(self.frame_superior)
+        self.combo_cliente.grid(row=0,column=1, pady=10,padx=10)
+
+        self.btn_buscar_xcliente = ctk.CTkButton(self.frame_superior, text="Buscar por Cliente")
+        self.btn_buscar_xcliente.grid(row=0,column=2,pady=10,padx=10)
+
+        ctk.CTkLabel(self.frame_superior, text="Id").grid(row=1,column=0, pady=10,padx=10)
+        self.entry_id = ctk.CTkEntry(self.frame_superior)
+        self.entry_id.grid(row=1,column=1, pady=10,padx=10)
+
+        self.btn_buscar_xid = ctk.CTkButton(self.frame_superior, text="Buscar por Id")
+        self.btn_buscar_xid.grid(row=1,column=2,pady=10,padx=10)
+
+        # Visualizar Pedido
+        self.frame_inferior = ctk.CTkFrame(pos)
+        self.frame_inferior.pack(pady=0,padx=0)
+        
+        self.treeview_pedido = ttk.Treeview(self.frame_inferior, columns=("Id","Cliente", "Menus", "Total", "Fecha"), show="headings")
+        self.treeview_pedido.heading("Id", text="Id")
+        self.treeview_pedido.heading("Cliente", text="Cliente")
+        self.treeview_pedido.heading("Menus", text="Menus")
+        self.treeview_pedido.heading("Total", text="Total")
+        self.treeview_pedido.heading("Fecha", text="Fecha")
+        self.treeview_pedido.pack(pady=10, padx=10, fill="both", expand=True)
 
 if __name__ == "__main__":
-<<<<<<< HEAD
     bd = BaseDatos('sqlite:///restaurante.db') 
     app = App()
     app.mainloop()
-=======
-    inicializar_base_de_datos()
-    root = ctk.CTk()
-    app = App(root)
-    root.mainloop()
->>>>>>> Renè
