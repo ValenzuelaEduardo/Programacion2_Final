@@ -4,6 +4,8 @@ from models import Cliente
 class ClienteCRUD:
     @staticmethod
     def crear_cliente(db: Session, nombre: str, correo: str):
+        if not nombre or not correo:
+            raise ValueError("El nombre y el correo no pueden estar vacíos.")
         cliente_existente = db.query(Cliente).filter(Cliente.correo == correo).first()
         if cliente_existente:
             raise ValueError(f"El cliente con correo '{correo}' ya existe.")
@@ -16,27 +18,22 @@ class ClienteCRUD:
 
     @staticmethod
     def leer_clientes(db: Session):
-        clientes = db.query(Cliente).all()
-        return [
-            {
-                "id_cliente": cliente.id_cliente,
-                "nombre": cliente.nombre,
-                "correo": cliente.correo
-            }
-            for cliente in clientes
-        ]
+        return db.query(Cliente).all()
 
     @staticmethod
     def actualizar_cliente(db: Session, id_cliente: int, nombre: str = None, correo: str = None):
         cliente = db.query(Cliente).filter(Cliente.id_cliente == id_cliente).first()
         if not cliente:
             raise ValueError(f"Cliente con ID {id_cliente} no encontrado.")
+        
         if correo and db.query(Cliente).filter(Cliente.correo == correo, Cliente.id_cliente != id_cliente).first():
             raise ValueError(f"El correo '{correo}' ya está en uso por otro cliente.")
+        
         if nombre:
             cliente.nombre = nombre
         if correo:
             cliente.correo = correo
+        
         db.commit()
         db.refresh(cliente)
         return cliente
@@ -45,7 +42,8 @@ class ClienteCRUD:
     def borrar_cliente(db: Session, id_cliente: int):
         cliente = db.query(Cliente).filter(Cliente.id_cliente == id_cliente).first()
         if not cliente:
-            raise ValueError(f"Cliente con ID {id_cliente} no encontrado.") 
+            raise ValueError(f"Cliente con ID {id_cliente} no encontrado.")
+        
         db.delete(cliente)
         db.commit()
         return cliente

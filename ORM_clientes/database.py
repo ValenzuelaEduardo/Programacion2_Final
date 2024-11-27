@@ -1,56 +1,47 @@
-from sqlalchemy import Column, Integer,create_engine, String, ForeignKey,DateTime, Float
-from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-#URL Base de datos XAMPP
-DATABASE_URL = "sqlite:///Restaurante.db"
+# database.py
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+import logging
 
-engine = create_engine(DATABASE_URL, connect_args={"ckeck_same":False})
-Base = declarative_base()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("database")
+
+# Obtener la ruta del directorio donde está ubicado este archivo
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Definir la URL de la base de datos con una ruta absoluta
+DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'restaurante.db')}"
+
+try:
+    engine = create_engine(DATABASE_URL, echo=True)
+    logger.info("Motor de base de datos inicializado correctamente.")
+except Exception as e:
+    logger.error(f"Error al inicializar el motor de base de datos: {e}")
+    raise
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-class Cliente(Base):
-    __tablename__ = "clientes"
-    id_cliente = Column(Integer, primary_key=True)
-    nombre = Column(String, nullable=True)
-    correo = Column(String, unique=True ,nullable=True)
+Base = declarative_base()
 
-class Ingrediente(Base):
-    __tablename__ = 'ingredientes'
-    id_ingrediente = Column(Integer, primary_key=True)
-    nombre = Column(String, unique=True, nullable=False)
-    tipo = Column(String, nullable=False)
-    cantidad = Column(Float, nullable=False)
-    unidad_medida = Column(String, nullable=False)
+def get_session():
+    db = SessionLocal()
+    try:
+        logger.info("Sesión de base de datos creada.")
+        yield db
+    except Exception as e:
+        logger.error(f"Error durante la sesión: {e}")
+        raise
+    finally:
+        db.close()
+        logger.info("Sesión de base de datos cerrada.")
 
-class Menu(Base):
-    __tablename__ = 'menus'
-    id_menu = Column(Integer, primary_key=True)
-    nombre = Column(String, unique=True, nullable=False)
-    descripcion = Column(String)
-
-class Pedido(Base):
-    __tablename__ = 'pedidos'
-    id_pedido = Column(Integer, primary_key=True)
-    id_cliente = Column(Integer, ForeignKey('clientes.id_cliente'), nullable=False)
-    fecha_creacion = Column(DateTime, null=False)
-    total = Column(Float, nullable=False)
-    cliente = relationship('Cliente', back_populates='pedidos')
-    detalles = relationship('DetallePedido', back_populates='pedido')
-
-class DetallePedido(Base):
-    __tablename__ = 'detalle_pedido'
-    id_detalle = Column(Integer, primary_key=True)
-    id_pedido = Column(Integer, ForeignKey('pedidos.id_pedido'), null=False)
-    id_menu = Column(Integer, ForeignKey('menus.id_menu'), null=False)
-    cantidad = Column(Integer, null=False)
-    pedido = relationship('Pedido', back_populates='detalles')
-
-class IngredientesPorMenu(Base):
-    __tablename__ = 'ingredientes_por_menu'
-    id_menu = Column(Integer, ForeignKey('menus.id_menu'), primary_key=True)
-    id_ingrediente = Column(Integer, ForeignKey('ingredientes.id_ingrediente'), primary_key=True)
-    cantidad = Column(Float, nullable=False)
-    unidad_medida = Column(String, null=False)
-
-def init_db():
-    Base.metadata.create_all(bind=engine)
+def inicializar_base_de_datos():
+    try:
+        logger.info("Inicializando las tablas...")
+        Base.metadata.drop_all(bind=engine)  # Borra todas las tablas existentes
+        Base.metadata.create_all(bind=engine)  # Crea todas las tablas
+        logger.info("Tablas creadas correctamente.")
+    except Exception as e:
+        logger.error(f"Error al inicializar las tablas: {e}")
+        raise

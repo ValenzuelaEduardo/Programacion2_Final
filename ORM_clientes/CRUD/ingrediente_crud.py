@@ -1,46 +1,46 @@
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+from models import Ingrediente
 
-# Crear una sesión
-def get_session():
-    try:
-        db = SessionLocal()
-        yield db
-    finally:
-        db.close()
+class IngredienteCRUD:
+    @staticmethod
+    def crear_ingrediente(db: Session, nombre: str, tipo: str, cantidad: float, unidad: str):
+        if not nombre or not tipo or cantidad <= 0:
+            raise ValueError("Datos inválidos para crear un ingrediente.")
+        nuevo_ingrediente = Ingrediente(nombre=nombre, tipo=tipo, cantidad=cantidad, unidad=unidad)
+        db.add(nuevo_ingrediente)
+        db.commit()
+        db.refresh(nuevo_ingrediente)
+        return nuevo_ingrediente
 
-#---------Create-------------------
-def crear_ingrediente(nombre, tipo, cantidad, unidad_medida, session):
-    try:
-        nuevo_ingrediente = Ingrediente(nombre=nombre, tipo=tipo, cantidad=cantidad, unidad_medida=unidad_medida)
-        session.add(nuevo_ingrediente)
-        session.commit()
-        print(f"Ingrediente '{nombre}' creado con éxito.")
-    except IntegrityError:
-        session.rollback()
-        print("Error: Ya existe un ingrediente con este nombre.")
+    @staticmethod
+    def leer_ingredientes(db: Session):
+        return db.query(Ingrediente).all()
 
-#---------Read-------------------
-def leer_ingredientes(session):
-    ingredientes = session.query(Ingrediente).all()
-    for ingrediente in ingredientes:
-        print(f"ID: {ingrediente.id_ingrediente}, Nombre: {ingrediente.nombre}, Tipo: {ingrediente.tipo}, Cantidad: {ingrediente.cantidad} {ingrediente.unidad_medida}")
+    @staticmethod
+    def actualizar_ingrediente(db: Session, id_ingrediente: int, nombre: str = None, tipo: str = None, cantidad: float = None, unidad: str = None):
+        ingrediente = db.query(Ingrediente).filter(Ingrediente.id_ingrediente == id_ingrediente).first()
+        if not ingrediente:
+            raise ValueError(f"Ingrediente con ID {id_ingrediente} no encontrado.")
+        
+        if nombre:
+            ingrediente.nombre = nombre
+        if tipo:
+            ingrediente.tipo = tipo
+        if cantidad is not None:
+            ingrediente.cantidad = cantidad
+        if unidad:
+            ingrediente.unidad = unidad
+        
+        db.commit()
+        db.refresh(ingrediente)
+        return ingrediente
 
-#---------Update-------------------
-def actualizar_ingrediente(id_ingrediente, nueva_cantidad, session):
-    ingrediente = session.query(Ingrediente).filter_by(id_ingrediente=id_ingrediente).first()
-    if ingrediente:
-        ingrediente.cantidad = nueva_cantidad
-        session.commit()
-        print(f"Ingrediente ID {id_ingrediente} actualizado.")
-    else:
-        print("Ingrediente no encontrado.")
-
-#---------Delete-------------------
-def eliminar_ingrediente(id_ingrediente, session):
-    ingrediente = session.query(Ingrediente).filter_by(id_ingrediente=id_ingrediente).first()
-    if ingrediente:
-        session.delete(ingrediente)
-        session.commit()
-        print(f"Ingrediente ID {id_ingrediente} eliminado.")
-    else:
-        print("Ingrediente no encontrado.")
+    @staticmethod
+    def borrar_ingrediente(db: Session, id_ingrediente: int):
+        ingrediente = db.query(Ingrediente).filter(Ingrediente.id_ingrediente == id_ingrediente).first()
+        if not ingrediente:
+            raise ValueError(f"Ingrediente con ID {id_ingrediente} no encontrado.")
+        
+        db.delete(ingrediente)
+        db.commit()
+        return ingrediente
