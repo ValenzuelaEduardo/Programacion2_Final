@@ -1,3 +1,9 @@
+from database import inicializar_base_de_datos, get_session
+from models import Cliente, Pedido, Ingrediente, Menu
+from CRUD.ingrediente_crud import IngredienteCRUD
+from CRUD.menu_crud import MenuCRUD
+from CRUD.cliente_crud import ClienteCRUD
+from CRUD.pedido_crud import PedidoCRUD
 
 def registrar_clientes(db):
     print("Registrando clientes...")

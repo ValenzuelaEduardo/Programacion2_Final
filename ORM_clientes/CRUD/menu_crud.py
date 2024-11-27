@@ -1,141 +1,57 @@
-<<<<<<< HEAD
-=======
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
+from models import Ingrediente
 from models import Menu
-from typing import Dict, List, Tuple, Optional
->>>>>>> parent of 855b773 (Merge branch 'Renè' into Eduardo)
+from models import menu_ingrediente
 
-        session: Session, nombre: str, descripcion: str, precio: float, disponible: int = 1
-    ) -> Menu:
-        """
-        Create a new menu in the database.
+class MenuCRUD:
+    @staticmethod
+    def crear_menu(db: Session, nombre: str, descripcion: str, precio: float, ingredientes: list[dict]):
+        if not nombre or precio <= 0:
+            raise ValueError("Datos inválidos para crear un menú.")
         
-        Args:
-            nombre (str): Menu name.
-            descripcion (str): Description of the menu.
-            precio (float): Price of the menu.
-            disponible (int): Availability status (1 for available, 0 for unavailable).
+        nuevo_menu = Menu(nombre=nombre, descripcion=descripcion, precio=precio)
+        db.add(nuevo_menu)
+        db.commit()
         
-        Returns:
-            Menu: The newly created Menu object.
-        """
-        try:
-            nuevo_menu = Menu(
-                nombre=nombre, descripcion=descripcion, precio=precio, disponible=disponible
+        # Insertar ingredientes en la tabla intermedia
+        for ingrediente in ingredientes:
+            db.execute(
+                menu_ingrediente.insert().values(
+                    menu_id=nuevo_menu.id_menu,
+                    ingrediente_id=ingrediente['id'],
+                    cantidad=ingrediente['cantidad']
+                )
             )
-            session.add(nuevo_menu)
-            session.commit()
-            session.refresh(nuevo_menu)
-            return nuevo_menu
-        except SQLAlchemyError as e:
-            session.rollback()
-            raise ValueError(f"Error al guardar el menú: {str(e)}")
+        db.commit()
+        return nuevo_menu
 
     @staticmethod
-    def listar_menus(session: Session) -> List[Dict[str, Optional[str]]]:
-        """
-        List all menus in the database.
-        
-        Returns:
-            List[Dict[str, Optional[str]]]: List of menu details.
-        """
-        menus = session.query(Menu).all()
-        return [
-            {
-                "id": menu.id,
-                "nombre": menu.nombre,
-                "descripcion": menu.descripcion,
-                "precio": menu.precio,
-                "disponible": menu.disponible,
-            }
-            for menu in menus
-        ]
+    def leer_menus(db: Session):
+        return db.query(Menu).all()
 
     @staticmethod
-    def obtener_menu(session: Session, id: int) -> Optional[Dict[str, Optional[str]]]:
-        """
-        Retrieve a menu by its ID.
-        
-        Args:
-            id (int): Menu ID.
-        
-        Returns:
-            Optional[Dict[str, Optional[str]]]: Menu details or None if not found.
-        """
-        menu = session.query(Menu).filter_by(id=id).first()
-        if menu:
-            return {
-                "id": menu.id,
-                "nombre": menu.nombre,
-                "descripcion": menu.descripcion,
-                "precio": menu.precio,
-                "disponible": menu.disponible,
-            }
-        return None
-
-    @staticmethod
-    def actualizar_menu(
-        session: Session,
-        id: int,
-        nombre: Optional[str] = None,
-        descripcion: Optional[str] = None,
-        precio: Optional[float] = None,
-        disponible: Optional[int] = None,
-    ) -> Menu:
-        """
-        Update menu information.
-        
-        Args:
-            id (int): Menu ID.
-            nombre (str, optional): New name.
-            descripcion (str, optional): New description.
-            precio (float, optional): New price.
-            disponible (int, optional): New availability status.
-        
-        Returns:
-            Menu: The updated Menu object.
-        """
-        menu = session.query(Menu).filter_by(id=id).first()
+    def actualizar_menu(db: Session, id_menu: int, nombre: str = None, descripcion: str = None, precio: float = None):
+        menu = db.query(Menu).filter(Menu.id_menu == id_menu).first()
         if not menu:
-            raise ValueError(f"Menú con ID {id} no encontrado.")
+            raise ValueError(f"Menú con ID {id_menu} no encontrado.")
         
         if nombre:
             menu.nombre = nombre
         if descripcion:
             menu.descripcion = descripcion
-        if precio:
+        if precio is not None:
             menu.precio = precio
-        if disponible is not None:
-            menu.disponible = disponible
         
-        try:
-            session.commit()
-            session.refresh(menu)
-            return menu
-        except SQLAlchemyError as e:
-            session.rollback()
-            raise ValueError(f"Error al actualizar el menú: {str(e)}")
+        db.commit()
+        db.refresh(menu)
+        return menu
 
     @staticmethod
-    def eliminar_menu(session: Session, id: int) -> Menu:
-        """
-        Delete a menu from the database.
-        
-        Args:
-            id (int): Menu ID.
-        
-        Returns:
-            Menu: The deleted Menu object.
-        """
-        menu = session.query(Menu).filter_by(id=id).first()
+    def borrar_menu(db: Session, id_menu: int):
+        menu = db.query(Menu).filter(Menu.id_menu == id_menu).first()
         if not menu:
-            raise ValueError(f"Menú con ID {id} no encontrado.")
+            raise ValueError(f"Menú con ID {id_menu} no encontrado.")
         
-        try:
-            session.delete(menu)
-            session.commit()
-            return menu
-        except SQLAlchemyError as e:
-            session.rollback()
-            raise ValueError(f"Error al eliminar el menú: {str(e)}")
+        db.delete(menu)
+        db.commit()
+        return menu

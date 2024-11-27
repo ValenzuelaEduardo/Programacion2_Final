@@ -1,69 +1,67 @@
-from sqlalchemy import Column, String, Integer, ForeignKey
+# models.py
+from sqlalchemy import Column, Integer, String, Float, Table, ForeignKey
 from sqlalchemy.orm import relationship
-from database import Base
+from database import *
 
+# Tabla intermedia entre Menu e Ingrediente
+menu_ingrediente = Table(
+    'menu_ingrediente',
+    Base.metadata,
+    Column('menu_id', Integer, ForeignKey('menus.id_menu'), primary_key=True),
+    Column('ingrediente_id', Integer, ForeignKey('ingredientes.id_ingrediente'), primary_key=True),
+    Column('cantidad', Float, nullable=False)
+)
 
-class Cliente:
-    def __init__(self, id_cliente, nombre, correo):
-        self.id_cliente = id_cliente
-        self.nombre = nombre
-        self.correo = correo
-        self.pedidos = []  
+# Tabla intermedia entre Pedido y Menu
+pedido_menu = Table(
+    'pedido_menu',
+    Base.metadata,
+    Column('pedido_id', Integer, ForeignKey('pedidos.id_pedido'), primary_key=True),
+    Column('menu_id', Integer, ForeignKey('menus.id_menu'), primary_key=True)
+)
 
-    def agregar_pedido(self, pedido):
-        self.pedidos.append(pedido)
+# Modelo de Cliente
+class Cliente(Base):
+    __tablename__ = 'clientes'
 
     id_Cliente = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String, nullable=False)
     correo = Column(String, unique=True, nullable=False)
 
-class Pedido:
-    def __init__(self, id_pedido, cliente, fecha_creacion, total):
-        self.id_pedido = id_pedido
-        self.cliente = cliente 
-        self.fecha_creacion = fecha_creacion
-        self.total = total
-        self.detalles = []  
+    pedidos = relationship("Pedido", back_populates="cliente")
 
-    def agregar_detalle(self, detalle):
-        self.detalles.append(detalle)
+# Modelo de Ingrediente
+class Ingrediente(Base):
+    __tablename__ = 'ingredientes'
 
+    id_ingrediente = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String, nullable=False)
+    tipo = Column(String, nullable=False)
+    cantidad = Column(Float, nullable=False)
+    unidad = Column(String, nullable=False)
 
-class DetallePedido:
-    def __init__(self, id_detalle, pedido, menu, cantidad):
-        self.id_detalle = id_detalle
-        self.pedido = pedido  
-        self.menu = menu  
-        self.cantidad = cantidad
+    menus = relationship("Menu", secondary=menu_ingrediente, back_populates="ingredientes")
 
+# Modelo de Menu
+class Menu(Base):
+    __tablename__ = 'menus'
 
-class Ingrediente:
-    def __init__(self, id_ingrediente, nombre, tipo, cantidad, unidad_medida):
-        self.id_ingrediente = id_ingrediente
-        self.nombre = nombre
-        self.tipo = tipo
-        self.cantidad = cantidad
-        self.unidad_medida = unidad_medida
+    id_menu = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String, nullable=False)
+    descripcion = Column(String, nullable=True)
+    precio = Column(Float, nullable=False)
 
+    ingredientes = relationship("Ingrediente", secondary=menu_ingrediente, back_populates="menus")
+    pedidos = relationship("Pedido", secondary=pedido_menu, back_populates="menus")
 
-class IngredientePorMenu:
-    def __init__(self, menu, ingrediente, cantidad, unidad_medida):
-        self.menu = menu  
-        self.ingrediente = ingrediente 
-        self.cantidad = cantidad
-        self.unidad_medida = unidad_medida
+# Modelo de Pedido
+class Pedido(Base):
+    __tablename__ = 'pedidos'
 
+    id_pedido = Column(Integer, primary_key=True, autoincrement=True)
+    descripcion = Column(String, nullable=False)
+    cliente_id = Column(Integer, ForeignKey('clientes.id_cliente'), nullable=False)
+    total = Column(Float, nullable=False)
 
-class Menu:
-    def __init__(self, id_menu, nombre, descripcion):
-        self.id_menu = id_menu
-        self.nombre = nombre
-        self.descripcion = descripcion
-        self.ingredientes = [] 
-        self.detalles_pedido = [] 
-
-    def agregar_ingrediente(self, ingrediente_por_menu):
-        self.ingredientes.append(ingrediente_por_menu)
-
-    def agregar_detalle_pedido(self, detalle_pedido):
-        self.detalles_pedido.append(detalle_pedido)
+    cliente = relationship("Cliente", back_populates="pedidos")
+    menus = relationship("Menu", secondary=pedido_menu, back_populates="pedidos")
