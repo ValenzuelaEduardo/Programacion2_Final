@@ -13,6 +13,9 @@ class Cliente:
     def agregar_pedido(self, pedido):
         self.pedidos.append(pedido)
 
+    id_Cliente = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String, nullable=False)
+    correo = Column(String, unique=True, nullable=False)
 
 class Pedido:
     def __init__(self, id_pedido, cliente, fecha_creacion, total):
