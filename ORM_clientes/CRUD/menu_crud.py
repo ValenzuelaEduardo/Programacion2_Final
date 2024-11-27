@@ -1,18 +1,4 @@
-<<<<<<< HEAD
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy.orm import Session
-from models import Menu
-from typing import Dict, List, Tuple, Optional
 
-class MenuCRUD:
-    def __init__(self):
-        """
-        Initialize the MenuCRUD.
-        """
-        pass
-
-    @staticmethod
-    def crear_menu(
         session: Session, nombre: str, descripcion: str, precio: float, disponible: int = 1
     ) -> Menu:
         """
