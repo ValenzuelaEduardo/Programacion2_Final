@@ -1,70 +1,82 @@
 from database import inicializar_base_de_datos, get_session
-from models import Cliente, Pedido, Ingrediente, Menu
+from CRUD.cliente_crud import ClienteCRUD
 from CRUD.ingrediente_crud import IngredienteCRUD
 from CRUD.menu_crud import MenuCRUD
-from CRUD.cliente_crud import ClienteCRUD
 from CRUD.pedido_crud import PedidoCRUD
 
-def registrar_clientes(db):
-    print("Registrando clientes...")
-    ClienteCRUD.crear_Cliente(db, "Juan Pérez", "juan@example.com", 30)
-    ClienteCRUD.crear_Cliente(db, "María Gómez", "maria@example.com", 25)
-    print("Clientes registrados.")
 
-def gestionar_ingredientes(db):
-    print("Gestionando ingredientes...")
-    IngredienteCRUD.crear_ingrediente(db, "Tomate", "Vegetal", 50, "kg")
-    IngredienteCRUD.crear_ingrediente(db, "Carne", "Proteína", 100, "kg")
-    IngredienteCRUD.crear_ingrediente(db, "Pan", "Carbohidrato", 200, "unidades")
-    print("Ingredientes registrados.")
-
-def gestionar_menus(db):
-    print("Gestionando menús...")
-    ingredientes = IngredienteCRUD.leer_ingredientes(db)
-    if len(ingredientes) < 2:
-        print("No hay suficientes ingredientes para crear un menú.")
-        return
-
-    MenuCRUD.crear_menu(
-        db,
-        "Hamburguesa Completa",
-        "Hamburguesa con carne, tomate y pan",
-        [ingredientes[0].id_ingrediente, ingredientes[1].id_ingrediente]
-    )
-    print("Menús registrados.")
-
-def generar_pedidos(db):
-    print("Generando pedidos...")
-    cliente = ClienteCRUD.leer_clientes(db)[0]
-    menu = MenuCRUD.leer_menus(db)[0]
-    
-    if cliente and menu:
-        PedidoCRUD.crear_pedido(db, Cliente.correo, "Pedido 1", [menu.id_menu])
-    print("Pedidos generados.")
-
-def mostrar_estadisticas(db):
-    print("Mostrando estadísticas...")
-    pedidos = PedidoCRUD.leer_pedidos(db)
-    print(f"Total de pedidos realizados: {len(pedidos)}")
-    
-    ingredientes = IngredienteCRUD.leer_ingredientes(db)
-    print(f"Ingredientes disponibles: {len(ingredientes)}")
-    
-    menus = MenuCRUD.leer_menus(db)
-    print(f"Menús disponibles: {len(menus)}")
-
-def main():
-    # Inicializar la base de datos
+def pruebas_funcionales():
     inicializar_base_de_datos()
+    print("Base de datos inicializada.")
 
-    # Crear una sesión
     with next(get_session()) as db:
-        # Simular el flujo del sistema
-        registrar_clientes(db)
-        gestionar_ingredientes(db)
-        gestionar_menus(db)
-        generar_pedidos(db)
-        mostrar_estadisticas(db)
+        print("Creando cliente...")
+        cliente = ClienteCRUD.crear_cliente(db, nombre="Juan Pérez", correo="juan@example.com")
+        print(f"Cliente creado: {cliente}")
+        print("Leyendo clientes...")
+        clientes = ClienteCRUD.leer_clientes(db)
+        print(f"Clientes: {clientes}")
+        print("Actualizando cliente...")
+
+        cliente_actualizado = ClienteCRUD.actualizar_cliente(db, cliente.id_cliente, nombre="Juan Actualizado")
+        print(f"Cliente actualizado: {cliente_actualizado}")
+        print("Eliminando cliente...")
+        ClienteCRUD.borrar_cliente(db, cliente.id_cliente)
+        print(f"Cliente con ID {cliente.id_cliente} eliminado.")
+        print("Creando ingrediente...")
+
+        ingrediente = IngredienteCRUD.crear_ingrediente(db, nombre="Tomate", tipo="Vegetal", cantidad=10, unidad="Kg")
+        print(f"Ingrediente creado: {ingrediente}")
+        print("Leyendo ingredientes...")
+        ingredientes = IngredienteCRUD.leer_ingredientes(db)
+
+        print(f"Ingredientes: {ingredientes}")
+
+
+
+        # Prueba CRUD de Menú
+
+        print("Creando menú...")
+
+        menu = MenuCRUD.crear_menu(db, nombre="Ensalada Mixta", descripcion="Ensalada con tomate y lechuga", precio=15.0, ingredientes=[{"id": ingrediente.id_ingrediente, "cantidad": 2}])
+
+        print(f"Menú creado: {menu}")
+
+
+
+        print("Leyendo menús...")
+
+        menus = MenuCRUD.leer_menus(db)
+
+        print(f"Menús: {menus}")
+
+
+
+        # Prueba CRUD de Pedido
+
+        print("Creando pedido...")
+
+        pedido = PedidoCRUD.crear_pedido(db, cliente_id=cliente.id_cliente, descripcion="Pedido de prueba", menus=[menu.id_menu])
+
+        print(f"Pedido creado: {pedido}")
+
+
+
+        print("Leyendo pedidos...")
+
+        pedidos = PedidoCRUD.leer_pedidos(db)
+
+        print(f"Pedidos: {pedidos}")
+
+
+
+        print("Eliminando pedido...")
+
+        PedidoCRUD.borrar_pedido(db, pedido.id_pedido)
+
+        print(f"Pedido con ID {pedido.id_pedido} eliminado.")
+
 
 if __name__ == "__main__":
-    main()
+
+    pruebas_funcionales()

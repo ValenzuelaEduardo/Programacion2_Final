@@ -1,7 +1,6 @@
-# models.py
 from sqlalchemy import Column, Integer, String, Float, Table, ForeignKey
 from sqlalchemy.orm import relationship
-from database import *
+from database import Base
 
 # Tabla intermedia entre Menu e Ingrediente
 menu_ingrediente = Table(
@@ -9,7 +8,8 @@ menu_ingrediente = Table(
     Base.metadata,
     Column('menu_id', Integer, ForeignKey('menus.id_menu'), primary_key=True),
     Column('ingrediente_id', Integer, ForeignKey('ingredientes.id_ingrediente'), primary_key=True),
-    Column('cantidad', Float, nullable=False)
+    Column('cantidad', Float, nullable=False),
+    extend_existing=True
 )
 
 # Tabla intermedia entre Pedido y Menu
@@ -17,14 +17,15 @@ pedido_menu = Table(
     'pedido_menu',
     Base.metadata,
     Column('pedido_id', Integer, ForeignKey('pedidos.id_pedido'), primary_key=True),
-    Column('menu_id', Integer, ForeignKey('menus.id_menu'), primary_key=True)
+    Column('menu_id', Integer, ForeignKey('menus.id_menu'), primary_key=True),
+    extend_existing=True
 )
 
 # Modelo de Cliente
 class Cliente(Base):
     __tablename__ = 'clientes'
 
-    id_Cliente = Column(Integer, primary_key=True, autoincrement=True)
+    id_cliente = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, nullable=False)
     correo = Column(String, unique=True, nullable=False)
 
@@ -32,10 +33,10 @@ class Cliente(Base):
 
 # Modelo de Ingrediente
 class Ingrediente(Base):
-    __tablename__ = 'ingredientes'
+    __tablename__ = "ingredientes"
 
-    id_ingrediente = Column(Integer, primary_key=True, autoincrement=True)
-    nombre = Column(String, nullable=False)
+    id_ingrediente = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, nullable=False, unique=True)
     tipo = Column(String, nullable=False)
     cantidad = Column(Float, nullable=False)
     unidad = Column(String, nullable=False)
@@ -44,11 +45,11 @@ class Ingrediente(Base):
 
 # Modelo de Menu
 class Menu(Base):
-    __tablename__ = 'menus'
+    __tablename__ = "menus"
 
-    id_menu = Column(Integer, primary_key=True, autoincrement=True)
+    id_menu = Column(Integer, primary_key=True)
     nombre = Column(String, nullable=False)
-    descripcion = Column(String, nullable=True)
+    descripcion = Column(String)
     precio = Column(Float, nullable=False)
 
     ingredientes = relationship("Ingrediente", secondary=menu_ingrediente, back_populates="menus")
@@ -58,7 +59,7 @@ class Menu(Base):
 class Pedido(Base):
     __tablename__ = 'pedidos'
 
-    id_pedido = Column(Integer, primary_key=True, autoincrement=True)
+    id_pedido = Column(Integer, primary_key=True)
     descripcion = Column(String, nullable=False)
     cliente_id = Column(Integer, ForeignKey('clientes.id_cliente'), nullable=False)
     total = Column(Float, nullable=False)
