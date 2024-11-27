@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from models import Ingrediente
 from typing import List, Dict, Optional
 
-
 class IngredienteCRUD:
     @staticmethod
     def crear_ingrediente(
@@ -35,7 +34,7 @@ class IngredienteCRUD:
         ingredientes = session.query(Ingrediente).offset(offset).limit(limite).all()
         return [
             {
-                "id_ingrediente": ingrediente.id_ingrediente,
+                "id_ingrediente": ingrediente.id,
                 "nombre": ingrediente.nombre,
                 "tipo": ingrediente.tipo,
                 "cantidad": ingrediente.cantidad,
@@ -51,7 +50,7 @@ class IngredienteCRUD:
         """
         Actualiza la cantidad de un ingrediente existente.
         """
-        ingrediente = session.query(Ingrediente).filter_by(id_ingrediente=id_ingrediente).first()
+        ingrediente = session.query(Ingrediente).filter_by(id=id_ingrediente).first()
         if not ingrediente:
             raise ValueError(f"Ingrediente con ID {id_ingrediente} no encontrado.")
         if nueva_cantidad is not None:
@@ -72,7 +71,7 @@ class IngredienteCRUD:
         """
         Elimina un ingrediente de la base de datos.
         """
-        ingrediente = session.query(Ingrediente).filter_by(id_ingrediente=id_ingrediente).first()
+        ingrediente = session.query(Ingrediente).filter_by(id=id_ingrediente).first()
         if not ingrediente:
             raise ValueError(f"Ingrediente con ID {id_ingrediente} no encontrado.")
         

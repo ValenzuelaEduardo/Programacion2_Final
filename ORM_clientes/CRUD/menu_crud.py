@@ -1,17 +1,19 @@
-import sqlite3
-from typing import List, Tuple, Optional
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session
+from models import Menu
+from typing import Dict, List, Tuple, Optional
 
 class MenuCRUD:
-    def __init__(self, db_path: str = 'restaurante.db'):
+    def __init__(self):
         """
-        Initialize the MenuCRUD with a database connection.
-        
-        Args:
-            db_path (str): Path to the SQLite database file.
+        Initialize the MenuCRUD.
         """
-        self.db_path = db_path
+        pass
 
-    def crear_menu(self, nombre: str, descripcion: str, precio: float, disponible: int = 1) -> int:
+    @staticmethod
+    def crear_menu(
+        session: Session, nombre: str, descripcion: str, precio: float, disponible: int = 1
+    ) -> Menu:
         """
         Create a new menu in the database.
         
@@ -22,30 +24,42 @@ class MenuCRUD:
             disponible (int): Availability status (1 for available, 0 for unavailable).
         
         Returns:
-            int: ID of the newly created menu.
+            Menu: The newly created Menu object.
         """
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO menus (nombre, descripcion, precio, disponible)
-                VALUES (?, ?, ?, ?)
-            ''', (nombre, descripcion, precio, disponible))
-            conn.commit()
-            return cursor.lastrowid
+        try:
+            nuevo_menu = Menu(
+                nombre=nombre, descripcion=descripcion, precio=precio, disponible=disponible
+            )
+            session.add(nuevo_menu)
+            session.commit()
+            session.refresh(nuevo_menu)
+            return nuevo_menu
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise ValueError(f"Error al guardar el menú: {str(e)}")
 
-    def listar_menus(self) -> List[Tuple[int, str, str, float, int]]:
+    @staticmethod
+    def listar_menus(session: Session) -> List[Dict[str, Optional[str]]]:
         """
         List all menus in the database.
         
         Returns:
-            List[Tuple[int, str, str, float, int]]: List of menu details.
+            List[Dict[str, Optional[str]]]: List of menu details.
         """
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT id, nombre, descripcion, precio, disponible FROM menus')
-            return cursor.fetchall()
+        menus = session.query(Menu).all()
+        return [
+            {
+                "id": menu.id,
+                "nombre": menu.nombre,
+                "descripcion": menu.descripcion,
+                "precio": menu.precio,
+                "disponible": menu.disponible,
+            }
+            for menu in menus
+        ]
 
-    def obtener_menu(self, id: int) -> Optional[Tuple[int, str, str, float, int]]:
+    @staticmethod
+    def obtener_menu(session: Session, id: int) -> Optional[Dict[str, Optional[str]]]:
         """
         Retrieve a menu by its ID.
         
@@ -53,14 +67,28 @@ class MenuCRUD:
             id (int): Menu ID.
         
         Returns:
-            Optional[Tuple[int, str, str, float, int]]: Menu details or None if not found.
+            Optional[Dict[str, Optional[str]]]: Menu details or None if not found.
         """
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT id, nombre, descripcion, precio, disponible FROM menus WHERE id = ?', (id,))
-            return cursor.fetchone()
+        menu = session.query(Menu).filter_by(id=id).first()
+        if menu:
+            return {
+                "id": menu.id,
+                "nombre": menu.nombre,
+                "descripcion": menu.descripcion,
+                "precio": menu.precio,
+                "disponible": menu.disponible,
+            }
+        return None
 
-    def actualizar_menu(self, id: int, nombre: str = None, descripcion: str = None, precio: float = None, disponible: int = None):
+    @staticmethod
+    def actualizar_menu(
+        session: Session,
+        id: int,
+        nombre: Optional[str] = None,
+        descripcion: Optional[str] = None,
+        precio: Optional[float] = None,
+        disponible: Optional[int] = None,
+    ) -> Menu:
         """
         Update menu information.
         
@@ -70,42 +98,50 @@ class MenuCRUD:
             descripcion (str, optional): New description.
             precio (float, optional): New price.
             disponible (int, optional): New availability status.
+        
+        Returns:
+            Menu: The updated Menu object.
         """
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            updates = []
-            params = []
+        menu = session.query(Menu).filter_by(id=id).first()
+        if not menu:
+            raise ValueError(f"Menú con ID {id} no encontrado.")
+        
+        if nombre:
+            menu.nombre = nombre
+        if descripcion:
+            menu.descripcion = descripcion
+        if precio:
+            menu.precio = precio
+        if disponible is not None:
+            menu.disponible = disponible
+        
+        try:
+            session.commit()
+            session.refresh(menu)
+            return menu
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise ValueError(f"Error al actualizar el menú: {str(e)}")
 
-            if nombre:
-                updates.append('nombre = ?')
-                params.append(nombre)
-            
-            if descripcion:
-                updates.append('descripcion = ?')
-                params.append(descripcion)
-            
-            if precio:
-                updates.append('precio = ?')
-                params.append(precio)
-            
-            if disponible is not None:
-                updates.append('disponible = ?')
-                params.append(disponible)
-            
-            if updates:
-                query = f'UPDATE menus SET {", ".join(updates)} WHERE id = ?'
-                params.append(id)
-                cursor.execute(query, tuple(params))
-                conn.commit()
-
-    def eliminar_menu(self, id: int):
+    @staticmethod
+    def eliminar_menu(session: Session, id: int) -> Menu:
         """
         Delete a menu from the database.
         
         Args:
             id (int): Menu ID.
+        
+        Returns:
+            Menu: The deleted Menu object.
         """
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute('DELETE FROM menus WHERE id = ?', (id,))
-            conn.commit()
+        menu = session.query(Menu).filter_by(id=id).first()
+        if not menu:
+            raise ValueError(f"Menú con ID {id} no encontrado.")
+        
+        try:
+            session.delete(menu)
+            session.commit()
+            return menu
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise ValueError(f"Error al eliminar el menú: {str(e)}")

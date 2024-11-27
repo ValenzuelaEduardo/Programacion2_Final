@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from tkinter import ttk
+from database import *
 
 ctk.set_appearance_mode("dark")  
 ctk.set_default_color_theme("green")  
@@ -179,5 +180,6 @@ class App(ctk.CTk):
         self.treeview_pedido.pack(pady=10, padx=10, fill="both", expand=True)
 
 if __name__ == "__main__":
+    bd = BaseDatos('sqlite:///restaurante.db') 
     app = App()
     app.mainloop()

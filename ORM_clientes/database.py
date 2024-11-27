@@ -1,8 +1,50 @@
-import sqlite3
-from app import *
+from sqlalchemy import create_engine, Column, Integer, String, Float, Text, ForeignKey
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.ext.declarative import declarative_base
 
+# Definir la base de datos
+Base = declarative_base()
+
+
+class Cliente(Base):
+    __tablename__ = 'clientes'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String, nullable=False)
+    correo_electronico = Column(String, unique=True, nullable=False)
+
+class Ingrediente(Base):
+    __tablename__ = 'ingredientes'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String, unique=True, nullable=False)
+    tipo = Column(String, nullable=False)
+    cantidad = Column(Float, nullable=False)
+    unidad_medida = Column(String, nullable=False)
+
+class Menu(Base):
+    __tablename__ = 'menus'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String, nullable=False)
+    descripcion = Column(Text)
+    precio = Column(Float, nullable=False)
+    disponible = Column(Integer, default=1)
+
+class Pedido(Base):
+    __tablename__ = 'pedidos'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cliente_id = Column(Integer, ForeignKey('clientes.id'), nullable=False)
+    menu_id = Column(Integer, ForeignKey('menus.id'), nullable=False)
+    total = Column(Float, nullable=False)
+    fecha = Column(Text, nullable=False)
+    
+    cliente = relationship("Cliente", back_populates="pedidos")
+    menu = relationship("Menu", back_populates="pedidos")
+
+Cliente.pedidos = relationship("Pedido", order_by=Pedido.id, back_populates="cliente")
+Menu.pedidos = relationship("Pedido", order_by=Pedido.id, back_populates="menu")
+
+# Clase para manejar la base de datos
 class BaseDatos:
-    def __init__(self, db_path: str = 'restaurante.db'):
+    def __init__(self, db_path: str = 'sqlite:///restaurante.db'):
         """
         Initialize the database and create all tables if they don't exist.
         
@@ -10,63 +52,16 @@ class BaseDatos:
             db_path (str): Path to the SQLite database file
         """
         self.db_path = db_path
+        self.engine = create_engine(self.db_path, echo=True)  # Crear engine de SQLAlchemy
+        self.Session = sessionmaker(bind=self.engine)  # Crear un sessionmaker para la interacción con la base de datos
         self._create_tables()
 
     def _create_tables(self):
         """
         Create all necessary tables if they don't exist.
         """
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
+        Base.metadata.create_all(self.engine)
 
-            
-            # Crear tabla de menús
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS menus (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nombre TEXT NOT NULL,
-                    descripcion TEXT,
-                    precio REAL NOT NULL,
-                    disponible INTEGER NOT NULL DEFAULT 1
-                )
-            ''')
-
-            # Crear tabla pedidos
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS pedidos (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    cliente_id INTEGER NOT NULL,
-                    menu_id INTEGER NOT NULL,
-                    total REAL NOT NULL,
-                    fecha TEXT NOT NULL,
-                    FOREIGN KEY (cliente_id) REFERENCES clientes (id),
-                    FOREIGN KEY (menu_id) REFERENCES menus (id)
-                )
-            ''')
-
-            # Crear tabla ingredientes
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS ingredientes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nombre TEXT NOT NULL UNIQUE,
-                    tipo TEXT NOT NULL,
-                    cantidad REAL NOT NULL,
-                    unidad_medida TEXT NOT NULL
-                )
-            ''')
-
-            # Crear tabla clientes
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS clientes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nombre TEXT NOT NULL,
-                    correo_electronico TEXT UNIQUE NOT NULL
-                )
-            ''')
-
-            conn.commit()
-
-if __name__ == "__main__":
-    bd = BaseDatos('restaurante.db')
-    app=App()
-    app.mainloop()
+    def get_session(self):
+        """Devuelve una nueva sesión de base de datos."""
+        return self.Session()
